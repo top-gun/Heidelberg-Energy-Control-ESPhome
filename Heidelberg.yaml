@@ -1,11 +1,23 @@
 substitutions:
   # all substitutions for this project
-  friendly_name: "Heidelberg Wallbox"
-  device_name: "Heidelberg-Wallbox"
+  friendly_name: "wallbox"
+  device_name: "wallbox"
   ble_mac_address: !secret ble_mac_address
   tesla_vin: !secret tesla_vin
   charging_amps_max: "16"
 
+
+logger:
+  level: INFO
+
+ota:
+  platform: esphome
+  password: !secret ota_password
+
+
+packages:
+  base:  github://PedroKTFC/esphome-tesla-ble/packages/base.yml@dev
+  common: github://PedroKTFC/esphome-tesla-ble/packages/common.yml@dev
 
 esp32:
   board: esp32dev  # set as needed for your board
@@ -27,8 +39,6 @@ wifi:
 web_server:
   port: 80
   version: 2
-
-
 
 
 esphome:
@@ -359,9 +369,27 @@ text_sensor:
       case 4: return std::string("Gesperrt-belegt");
       case 5: return std::string("Leerlauf");
       case 6: return std::string("nein-6");
-      case 7: return std::string("ja-7");
+      case 7: return std::string("Laedt");
       case 8: return std::string("reduziert");
       case 9: return std::string("Fehler9");
       case 10: return std::string("gesperrt");
       default: return std::string("Fehler");
       }
+  - platform: template
+    id: WB_Ladestatus_ISO
+    name: "WB-Ladestatus-ISO"
+    lambda: |-
+      auto value = id(wb_ladestatus_num).state;
+      switch ((uint16_t)value) {
+      case 2: return std::string("A1");
+      case 3: return std::string("A2");
+      case 4: return std::string("B1");
+      case 5: return std::string("B2");
+      case 6: return std::string("C1");
+      case 7: return std::string("C2");
+      case 8: return std::string("derating");
+      case 9: return std::string("E");
+      case 10: return std::string("F");
+      default: return std::string("Fehler");
+      }
+    entity_category: diagnostic
