@@ -4,4 +4,5 @@ For charge-on-solar, the easiest solution is to connect the box with a house-aut
 
 The necessary hardware is cheap:
 
-An ESP32 - they are in the range of 5-10 Euro. I picked one with 230V-input 
+An ESP32 - they are in the range of 5-10 Euro. I picked one with 230V-input, about 8 Euro on Ali Express.
+A RS485-adapter for 2 Euro from Ali Express - they are about 10 Euro for a pack of 2 from Amazon.
