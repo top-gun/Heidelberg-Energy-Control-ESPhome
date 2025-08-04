@@ -2,7 +2,7 @@ The wallbox "Heidelberg Energy Control" is a robust BEV charger with an excellen
 
 For charge-on-solar, the easiest solution is to connect the box with a house-automation system like Home Assistant.
 
-#Hardware requirements:
+# Hardware requirements:
 
 An ESP32 - they are in the range of 5-10 Euro. I picked one with 230V-input, about 8 Euro on Ali Express: https://de.aliexpress.com/item/1005003721730927.html
 
@@ -12,12 +12,12 @@ With the 230V-version, you need an extra FTDI-adapter because the 230V-version d
 
 A RS485-adapter for 2 Euro from Ali Express - they are about 10 Euro for a pack of 2 from Amazon, or 0.99 Euro on AliExpress: https://de.aliexpress.com/item/1005007176292527.html
 
-Hardware preparation:
+# Hardware preparation:
 
-# ESP32:
+## ESP32:
 On the ESP32, solder the 6-pin-connector to the PCB. The longer ones are not needed and should not be installed as we want the least open metal parts in the wallbox.
 
-# RS485 converter:
+## RS485 converter:
 On the 4-pin-cable that comes with the RS485 adapter, you need to add a 4-pin Dupont connector to connect it to the ESP32. The most convenient order is to use 1:1 the same color order on the Dupont as on the JST-XH connector that goes into the RS485. See the picture for orientation.
 
 
