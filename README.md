@@ -8,7 +8,7 @@ An ESP32 - they are in the range of 5-10 Euro. I picked one with 230V-input, abo
 
 Of course, you may chose a standard ESP32-Devkit-PCB, they are cheaper but need a 5V supply.
 
-With the 230V-version, you need an extra FTDI-adapter because the 230V-version doesn't come with a USB-port. They are pretty generic. I picked this one because I wanted one with a USB-C connector. Many come with the outdated Mini-USB connector.
+With the 230V-version, you need an extra FTDI-adapter because the 230V-version doesn't come with a USB-port. They are pretty generic. I picked this one because I wanted one with a USB-C connector. Many come with the outdated Mini-USB connector. https://de.aliexpress.com/item/1005006150051861.html
 
 A RS485-adapter for 2 Euro from Ali Express - they are about 10 Euro for a pack of 2 from Amazon, or 0.99 Euro on AliExpress: https://de.aliexpress.com/item/1005007176292527.html
 
