@@ -22,7 +22,7 @@ On the ESP32, solder the 6-pin-connector to the PCB. The longer ones are not nee
 
 On the 4-pin-cable that comes with the RS485 adapter, you need to add a 4-pin Dupont connector to connect it to the ESP32. The most convenient order is to use 1:1 the same color order on the Dupont as on the JST-XH connector that goes into the RS485. See the picture for orientation.
 
-![alt text](https://github.com/top-gun/Heidelberg-Energy-Control-ESPhome/tree/main/pictures/ESP32_and_RS485.JPEG "ESP32 wired with RS485")
+![alt text](https://github.com/top-gun/Heidelberg-Energy-Control-ESPhome/blob/main/pictures/ESP32_and_RS485.JPEG "ESP32 wired with RS485")
 
 
 The ESP32 needs to be compiled with the Yaml-file in https://github.com/top-gun/Heidelberg-Energy-Control-ESPhome/blob/main/Heidelberg.yaml . It gets connected to the wallbox with a two-wire connection called Modbus, it's electrically also known as RS-485. The adapters are cheap and easy to install. They connect with four wires to the ESP32: Ground, 5V (3.3V would be ok too), RX and TX. RX and TX transfer the data to and from the adapter. The ESP32 has so-called "General Purpose Input/Output" pins that are usable for this. I chose the pins GPIO01 and GPIO03 for my ESP32. Depending on the model, these might be used for the USB adapter. It is also common to use GPIO 16 and GPIO 17, or GPIO 21 and GPIO 22. Just chose them based on the schematics that you get with your ESP32 and update the config file, they go into lines 84-85:
