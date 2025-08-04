@@ -1,29 +1,19 @@
 substitutions:
-  # all substitutions for this project
-  friendly_name: "wallbox"
+  friendly_name: "Wallbox"
   device_name: "wallbox"
   ble_mac_address: !secret ble_mac_address
   tesla_vin: !secret tesla_vin
   charging_amps_max: "16"
 
 
-logger:
-  level: INFO
-
-ota:
-  platform: esphome
-  password: !secret ota_password
-
-
-packages:
-  base:  github://PedroKTFC/esphome-tesla-ble/packages/base.yml@dev
-  common: github://PedroKTFC/esphome-tesla-ble/packages/common.yml@dev
-
 esp32:
   board: esp32dev  # set as needed for your board
   framework:
     type: esp-idf
+    # version: 5.3.2
 
+ota:
+  - platform: esphome
 
 api:
   encryption:
@@ -40,6 +30,11 @@ web_server:
   port: 80
   version: 2
 
+logger:
+#  level: VERBOSE
+  level: DEBUG
+
+
 
 esphome:
   name: ${device_name}
@@ -51,12 +46,15 @@ esphome:
         - number.set:
             id: heidelberg_charge_current
             value: 6  # Setzt den Ladestrom auf 6 A
+        - logger.log: "Set the charge current to 6A on startup"
         - number.set:
             id: heidelberg_failsafe_charge_current
             value: 6  # Setzt den Ladestrom für Kommunikationsfehler auf 6 A
+        - logger.log: "Set the failsafe current to 6A on startup"
         - number.set:
             id: heidelberg_powersave
             value: 1  # Turn off powermanagement.
+        - logger.log: "Turned off powersaving on the wallbox if idle to keep communication without cable"
 
 
 switch:
@@ -75,8 +73,20 @@ switch:
     turn_off_action:
         - number.set:
             id: heidelberg_powersave
-            value: 4  # Turn on powermanagement.
-    entity_category: diagnostic
+            value: 4  # 4=always on.
+    entity_category: config
+  - platform: template
+    id: "WB_Low_Solar_Input"
+    name: "WB Low Solar Input"
+    internal: True
+    optimistic: True
+    on_turn_on:
+      - lambda: |-
+          id(WB_Low_Solar_Input_Timestamp) = millis();
+    on_turn_off:
+      - lambda: |-
+          id(WB_Low_Solar_Input_Timestamp) = millis();
+
 
 # UART configuration for RS485
 uart:
@@ -101,7 +111,7 @@ modbus_controller:
   address: 1 # Modbus Bus ID (matches S4 DIP switch, e.g., 0001)
   modbus_id: mod_bus
   command_throttle: 100ms # Minimum time between requests
-  update_interval: 5s # How often to poll the Wallbox
+  update_interval: 2s # How often to poll the Wallbox
   on_online:
     then:
     - logger.log: "wallbox back online!"
@@ -125,7 +135,7 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: heidelberg_wallbox_id01
     id: wb_ladestatus_num
-    internal: yes
+    internal: False
     address: 0x0005 # Register for charging state
     register_type: read
     value_type: U_WORD
@@ -233,12 +243,13 @@ sensor:
     id: heidelberg_energy_powerup
     name: "WB Energie seit Start"
     unit_of_measurement: Wh
+    accuracy_decimals: 3
     device_class: energy
     state_class: total_increasing
     update_interval: 1s
     lambda: |-
       if (id(heidelberg_energy_powerup_high_byte).has_state() && id(heidelberg_energy_powerup_low_byte).has_state()) {
-        return (uint32_t(id(heidelberg_energy_powerup_high_byte).state) * 65536) + uint32_t(id(heidelberg_energy_powerup_low_byte).state);
+        return ((uint32_t(id(heidelberg_energy_powerup_high_byte).state) * 65536) + uint32_t(id(heidelberg_energy_powerup_low_byte).state));
       } else {
         return NAN;
       }
@@ -266,12 +277,13 @@ sensor:
     id: heidelberg_energy_total
     name: "WB Energie gesamt"
     unit_of_measurement: Wh
+    accuracy_decimals: 3
     device_class: energy
     state_class: total_increasing
     update_interval: 1s
     lambda: |-
       if (id(heidelberg_energy_high_byte).has_state() && id(heidelberg_energy_low_byte).has_state()) {
-        return (uint32_t(id(heidelberg_energy_high_byte).state) * 65536) + uint32_t(id(heidelberg_energy_low_byte).state);
+        return ((uint32_t(id(heidelberg_energy_high_byte).state) * 65536) + uint32_t(id(heidelberg_energy_low_byte).state));
       } else {
         return NAN;
       }
@@ -281,6 +293,18 @@ sensor:
     lambda: |-
       return (id(heidelberg_softwareversion).state);
     entity_category: diagnostic
+  - platform: template
+    id: WB_Low_Solar_Input_Duration
+    name: "WB Low Solar Input Duration"
+    accuracy_decimals: 0
+    unit_of_measurement: "s"
+    update_interval: 10s 
+    entity_category: diagnostic
+    lambda: |-
+      unsigned long current = millis();
+      auto zeit = (current - id(WB_Low_Solar_Input_Timestamp))/1000;
+      if (not(id(WB_Low_Solar_Input).state)) { zeit = 0; };
+      return zeit;
 
 
 number:
@@ -325,7 +349,7 @@ number:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_powersave
     name: "WB Powersaving disable"
-    internal: yes
+    internal: True
     address: 0x0102 # Holding register for max current command
     register_type: holding
     value_type: U_WORD
@@ -333,6 +357,7 @@ number:
     max_value: 4 # Maximum is 65s
     step: 4
     # only bit 2 is relevant, either 0 or 4, 4=disable
+    entity_category: config
   - platform: modbus_controller
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_failsafe_charge_current
@@ -355,29 +380,74 @@ number:
       } else {
       return x * 10;
       }
+    entity_category: config
+  - platform: template
+    id: heidelberg_power_subtract
+    name: "Heidelberg_Hausverbrauch"
+    optimistic: True
+    restore_value: True
+    min_value: 0
+    max_value: 10000
+    step: 100
+    entity_category: config
+  - platform: template
+    id: heidelberg_power_avail
+    name: "Heidelberg Leistung_PV"
+    optimistic: True
+    min_value: 0
+    max_value: 11000
+    step: 1
+    on_value: 
+      then:
+        - if:
+            condition:
+              lambda: 'return x < 4140;'
+            then:
+              - switch.turn_on: WB_Low_Solar_Input
+            else:
+              - switch.turn_off: WB_Low_Solar_Input
+        - lambda: |-
+            // calculate amperage from Solar power and house consumption
+            float ampere = (x - id(heidelberg_power_subtract).state) / 230 /3;
+            ampere = floor(ampere);
+              unsigned long current = millis();
+            // if current is under 6A, keep charging for 5 minutes, then turn charging off
+            if (ampere <6 and id(WB_Low_Solar_Input).state &&
+                (id(WB_Low_Solar_Input_Duration).state > 300)) {
+              ampere = 0;
+            }
+            // transfer ampere to Modbus Register 
+            auto call = id(heidelberg_charge_current).make_call();
+            call.set_value( ampere );
+            call.perform();
+            // (id(heidelberg_charge_current).publish_state(ampere));
+    # on_value_range: 
+    #   below: 4140
+    #   then:
+    #     - switch.turn_on: WB_Low_Solar_Input
 
 
 text_sensor:
   - platform: template
     id: WB_Ladestatus
-    name: "WB-Ladestatus"
+    name: "WB Ladestatus"
     lambda: |-
       auto value = id(wb_ladestatus_num).state;
       switch ((uint16_t)value) {
-      case 2: return std::string("Gesperrt-frei");
-      case 3: return std::string("Leerlauf-frei");
-      case 4: return std::string("Gesperrt-belegt");
-      case 5: return std::string("Leerlauf");
+      case 2: return std::string("Frei");
+      case 3: return std::string("Frei");
+      case 4: return std::string("Gesperrt");
+      case 5: return std::string("Bereit");
       case 6: return std::string("nein-6");
       case 7: return std::string("Laedt");
       case 8: return std::string("reduziert");
-      case 9: return std::string("Fehler9");
-      case 10: return std::string("gesperrt");
+      case 9: return std::string("Fehler-Isolation");
+      case 10: return std::string("Fehler-WB");
       default: return std::string("Fehler");
       }
   - platform: template
     id: WB_Ladestatus_ISO
-    name: "WB-Ladestatus-ISO"
+    name: "WB Ladestatus-ISO"
     lambda: |-
       auto value = id(wb_ladestatus_num).state;
       switch ((uint16_t)value) {
@@ -390,6 +460,31 @@ text_sensor:
       case 8: return std::string("derating");
       case 9: return std::string("E");
       case 10: return std::string("F");
+      case 11: return std::string("11");
       default: return std::string("Fehler");
       }
     entity_category: diagnostic
+
+binary_sensor:
+  - platform: template
+    id: WB_Ladekabel
+    name: "WB Ladekabel"
+    lambda: |-
+      auto value = id(wb_ladestatus_num).state;
+      switch ((uint16_t)value) {
+      case 2: return false;
+      case 3: return false;
+      case 4: return true;
+      case 5: return true;
+      case 6: return true;
+      case 7: return true;
+      case 8: return true;
+      case 9: return {};
+      case 10: return {};
+      default: return {};
+      }
+globals:
+  - id: WB_Low_Solar_Input_Timestamp
+    type: unsigned long
+    restore_value: no
+    initial_value: '0'
