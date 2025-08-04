@@ -14,7 +14,7 @@ A RS485-adapter for 2 Euro from Ali Express - they are about 10 Euro for a pack 
 
 # Hardware preparation:
 
-## ESP32:
+<ins> ESP32:
 On the ESP32, solder the 6-pin-connector to the PCB. The longer ones are not needed and should not be installed as we want the least open metal parts in the wallbox.
 
 ## RS485 converter:
