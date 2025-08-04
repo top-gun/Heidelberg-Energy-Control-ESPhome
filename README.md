@@ -14,10 +14,10 @@ A RS485-adapter for 2 Euro from Ali Express - they are about 10 Euro for a pack 
 
 # Hardware preparation:
 
-<ins> ESP32:
+<ins> ESP32:</ins>
 On the ESP32, solder the 6-pin-connector to the PCB. The longer ones are not needed and should not be installed as we want the least open metal parts in the wallbox.
 
-## RS485 converter:
+<ins> RS485 converter:</ins>
 On the 4-pin-cable that comes with the RS485 adapter, you need to add a 4-pin Dupont connector to connect it to the ESP32. The most convenient order is to use 1:1 the same color order on the Dupont as on the JST-XH connector that goes into the RS485. See the picture for orientation.
 
 
