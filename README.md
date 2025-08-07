@@ -4,6 +4,8 @@ The wallbox "Heidelberg Energy Control" is a robust BEV charger with an excellen
 
 For charge-on-solar, the easiest solution is to connect the box with a house-automation system like Home Assistant.
 
+![alt text](https://github.com/top-gun/Heidelberg-Energy-Control-ESPhome/blob/main/pictures/Heidelberg-open.JPEG "Wallbox")
+
 # Hardware requirements:
 
 An ESP32 - they are in the range of 5-10 Euro. I picked one with 230V-input, about 8 Euro on Ali Express: https://de.aliexpress.com/item/1005003721730927.html
