@@ -55,3 +55,13 @@ Now click "Install", then "Plug into the computer running ESPhome device builder
 Wiring the ESP32 and RS485:
 
 It gets connected to the wallbox with a two-wire connection called Modbus, it's electrically also known as RS-485. The adapters are cheap and easy to install. They connect with four wires to the ESP32: Ground, 5V (3.3V would be ok too), RX and TX. RX and TX transfer the data to and from the adapter. 
+
+# Setting up the Wallbox
+
+The Energy Control wallbox uses several dip switches for configuration, and since we move from stand-alone mode to managed mode, we need to change a few of them.
+
+DIP Switch block 4: Set switch 4 (from the left) to 1 (upper position) - this tells the box it is connected with ID "1" to a Modbus controller.
+
+DIP Switch block 6: Set switch 2 (from the bottom) to 1 (left) - this activates the termination resistor and improves connection reliability.
+
+Attention: When you modify switches, turn the box off and back on afterwards. You need to do that anyway, so the changes become effective.
