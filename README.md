@@ -60,8 +60,11 @@ It gets connected to the wallbox with a two-wire connection called Modbus, it's 
 
 The Energy Control wallbox uses several dip switches for configuration, and since we move from stand-alone mode to managed mode, we need to change a few of them.
 
+Attention: When you modify switches, turn the box off and back on afterwards. You need to do that anyway, so the changes become effective.
+
 DIP Switch block 4: Set switch 4 (from the left) to 1 (upper position) - this tells the box it is connected with ID "1" to a Modbus controller.
 
 DIP Switch block 6: Set switch 2 (from the bottom) to 1 (left) - this activates the termination resistor and improves connection reliability.
 
-Attention: When you modify switches, turn the box off and back on afterwards. You need to do that anyway, so the changes become effective.
+If you feel confused, click on the picture of the open wallbox and use it as a reference.
+
