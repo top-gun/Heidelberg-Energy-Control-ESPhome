@@ -6,8 +6,6 @@ For charge-on-solar, the easiest solution is to connect the box with a house-aut
 
 <img src="https://github.com/top-gun/Heidelberg-Energy-Control-ESPhome/blob/main/pictures/Heidelberg-open.JPEG" width="300" height="400">
 
-![alt text](https://github.com/top-gun/Heidelberg-Energy-Control-ESPhome/blob/main/pictures/Heidelberg-open.JPEG "Wallbox")
-
 This is the wallbox from within Home Assistant:
 
 ![alt text](https://github.com/top-gun/Heidelberg-Energy-Control-ESPhome/blob/main/pictures/HomeAssistant.png "Wallbox in HA")
