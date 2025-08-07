@@ -1,9 +1,8 @@
+# Stand: 06.08.25
+
 substitutions:
   friendly_name: "Wallbox"
   device_name: "wallbox"
-  ble_mac_address: !secret ble_mac_address
-  tesla_vin: !secret tesla_vin
-  charging_amps_max: "16"
 
 
 esp32:
@@ -25,7 +24,6 @@ wifi:
   password: !secret wifi_password
   use_address: 192.168.178.128
 
-
 web_server:
   port: 80
   version: 2
@@ -34,7 +32,9 @@ logger:
 #  level: VERBOSE
   level: DEBUG
 
-
+button:
+  - platform: restart
+    name: "Wallbox Restart"
 
 esphome:
   name: ${device_name}
@@ -76,16 +76,16 @@ switch:
             value: 4  # 4=always on.
     entity_category: config
   - platform: template
-    id: "WB_Low_Solar_Input"
+    id: "heidelberg_Low_Solar_Input"
     name: "WB Low Solar Input"
     internal: True
     optimistic: True
     on_turn_on:
       - lambda: |-
-          id(WB_Low_Solar_Input_Timestamp) = millis();
+          id(heidelberg_Low_Solar_Input_Timestamp) = millis();
     on_turn_off:
       - lambda: |-
-          id(WB_Low_Solar_Input_Timestamp) = millis();
+          id(heidelberg_Low_Solar_Input_Timestamp) = millis();
 
 
 # UART configuration for RS485
@@ -111,7 +111,7 @@ modbus_controller:
   address: 1 # Modbus Bus ID (matches S4 DIP switch, e.g., 0001)
   modbus_id: mod_bus
   command_throttle: 100ms # Minimum time between requests
-  update_interval: 2s # How often to poll the Wallbox
+  update_interval: 5s # How often to poll the Wallbox
   on_online:
     then:
     - logger.log: "wallbox back online!"
@@ -131,10 +131,10 @@ sensor:
     register_type: read
     value_type: U_WORD
     lambda: |-
-      return (x -156);
+      return uint32_t(x -156);
   - platform: modbus_controller
     modbus_controller_id: heidelberg_wallbox_id01
-    id: wb_ladestatus_num
+    id: heidelberg_ladestatus_num
     internal: False
     address: 0x0005 # Register for charging state
     register_type: read
@@ -212,7 +212,7 @@ sensor:
     accuracy_decimals: 0
   - platform: modbus_controller
     modbus_controller_id: heidelberg_wallbox_id01
-    id: power
+    id: heidelberg_power
     name: "WB Leistung"
     address: 0x000e # Register for total power (in VA)
     register_type: read
@@ -221,80 +221,34 @@ sensor:
     accuracy_decimals: 0
   - platform: modbus_controller
     modbus_controller_id: heidelberg_wallbox_id01
-    id: heidelberg_energy_powerup_high_byte
-    name: "WB Energie-powerup-High-Byte"
-    address: 0x000f
-    register_type: read
-    value_type: U_WORD
-    unit_of_measurement: Wh
-    accuracy_decimals: 0
-    internal: true
-  - platform: modbus_controller
-    modbus_controller_id: heidelberg_wallbox_id01
-    id: heidelberg_energy_powerup_low_byte
-    name: "WB Energie-Low-Byte"
-    address: 0x0010
-    register_type: read
-    value_type: U_WORD
-    unit_of_measurement: Wh
-    accuracy_decimals: 0
-    internal: true
-  - platform: template
     id: heidelberg_energy_powerup
     name: "WB Energie seit Start"
-    unit_of_measurement: Wh
+    address: 0x000f  # entspricht Register 30018 (0-basiert!)
+    register_type: read
+    value_type: U_DWORD  # 32-bit unsigned integer
+    unit_of_measurement: "kWh"
     accuracy_decimals: 3
-    device_class: energy
-    state_class: total_increasing
-    update_interval: 1s
-    lambda: |-
-      if (id(heidelberg_energy_powerup_high_byte).has_state() && id(heidelberg_energy_powerup_low_byte).has_state()) {
-        return ((uint32_t(id(heidelberg_energy_powerup_high_byte).state) * 65536) + uint32_t(id(heidelberg_energy_powerup_low_byte).state));
-      } else {
-        return NAN;
-      }
+    filters:
+      - multiply: 0.001  # von Wh → kWh
   - platform: modbus_controller
     modbus_controller_id: heidelberg_wallbox_id01
-    id: heidelberg_energy_high_byte
-    name: "WB Energie-High-Byte"
-    address: 0x0011
-    register_type: read
-    value_type: U_WORD
-    unit_of_measurement: Wh
-    accuracy_decimals: 0
-    internal: true
-  - platform: modbus_controller
-    modbus_controller_id: heidelberg_wallbox_id01
-    id: heidelberg_energy_low_byte
-    name: "WB Energie-Low-Byte"
-    address: 0x0012
-    register_type: read
-    value_type: U_WORD
-    unit_of_measurement: Wh
-    accuracy_decimals: 0
-    internal: true
-  - platform: template
     id: heidelberg_energy_total
-    name: "WB Energie gesamt"
-    unit_of_measurement: Wh
+    name: "WB Energie Gesamt"
+    address: 0x0011  # entspricht Register 30018 (0-basiert!)
+    register_type: read
+    value_type: U_DWORD  # 32-bit unsigned integer
+    unit_of_measurement: "kWh"
     accuracy_decimals: 3
-    device_class: energy
-    state_class: total_increasing
-    update_interval: 1s
-    lambda: |-
-      if (id(heidelberg_energy_high_byte).has_state() && id(heidelberg_energy_low_byte).has_state()) {
-        return ((uint32_t(id(heidelberg_energy_high_byte).state) * 65536) + uint32_t(id(heidelberg_energy_low_byte).state));
-      } else {
-        return NAN;
-      }
+    filters:
+      - multiply: 0.001  # von Wh → kWh
   - platform: template
     id: heidelberg_sw_version
     name: "WB Softwareversion"
     lambda: |-
-      return (id(heidelberg_softwareversion).state);
+      return uint32_t(id(heidelberg_softwareversion).state);
     entity_category: diagnostic
   - platform: template
-    id: WB_Low_Solar_Input_Duration
+    id: heidelberg_Low_Solar_Input_Duration
     name: "WB Low Solar Input Duration"
     accuracy_decimals: 0
     unit_of_measurement: "s"
@@ -302,8 +256,8 @@ sensor:
     entity_category: diagnostic
     lambda: |-
       unsigned long current = millis();
-      auto zeit = (current - id(WB_Low_Solar_Input_Timestamp))/1000;
-      if (not(id(WB_Low_Solar_Input).state)) { zeit = 0; };
+      auto zeit = (current - id(heidelberg_Low_Solar_Input_Timestamp))/1000;
+      if (not(id(heidelberg_Low_Solar_Input).state)) { zeit = 0; };
       return zeit;
 
 
@@ -403,17 +357,17 @@ number:
             condition:
               lambda: 'return x < 4140;'
             then:
-              - switch.turn_on: WB_Low_Solar_Input
+              - switch.turn_on: heidelberg_Low_Solar_Input
             else:
-              - switch.turn_off: WB_Low_Solar_Input
+              - switch.turn_off: heidelberg_Low_Solar_Input
         - lambda: |-
             // calculate amperage from Solar power and house consumption
             float ampere = (x - id(heidelberg_power_subtract).state) / 230 /3;
             ampere = floor(ampere);
               unsigned long current = millis();
             // if current is under 6A, keep charging for 5 minutes, then turn charging off
-            if (ampere <6 and id(WB_Low_Solar_Input).state &&
-                (id(WB_Low_Solar_Input_Duration).state > 300)) {
+            if (ampere <6 and id(heidelberg_Low_Solar_Input).state &&
+                (id(heidelberg_Low_Solar_Input_Duration).state > 300)) {
               ampere = 0;
             }
             // transfer ampere to Modbus Register 
@@ -421,18 +375,14 @@ number:
             call.set_value( ampere );
             call.perform();
             // (id(heidelberg_charge_current).publish_state(ampere));
-    # on_value_range: 
-    #   below: 4140
-    #   then:
-    #     - switch.turn_on: WB_Low_Solar_Input
 
 
 text_sensor:
   - platform: template
-    id: WB_Ladestatus
+    id: heidelberg_Ladestatus
     name: "WB Ladestatus"
     lambda: |-
-      auto value = id(wb_ladestatus_num).state;
+      auto value = id(heidelberg_ladestatus_num).state;
       switch ((uint16_t)value) {
       case 2: return std::string("Frei");
       case 3: return std::string("Frei");
@@ -446,10 +396,10 @@ text_sensor:
       default: return std::string("Fehler");
       }
   - platform: template
-    id: WB_Ladestatus_ISO
+    id: heidelberg_Ladestatus_ISO
     name: "WB Ladestatus-ISO"
     lambda: |-
-      auto value = id(wb_ladestatus_num).state;
+      auto value = id(heidelberg_ladestatus_num).state;
       switch ((uint16_t)value) {
       case 2: return std::string("A1");
       case 3: return std::string("A2");
@@ -467,10 +417,10 @@ text_sensor:
 
 binary_sensor:
   - platform: template
-    id: WB_Ladekabel
+    id: heidelberg_Ladekabel
     name: "WB Ladekabel"
     lambda: |-
-      auto value = id(wb_ladestatus_num).state;
+      auto value = id(heidelberg_ladestatus_num).state;
       switch ((uint16_t)value) {
       case 2: return false;
       case 3: return false;
@@ -484,7 +434,7 @@ binary_sensor:
       default: return {};
       }
 globals:
-  - id: WB_Low_Solar_Input_Timestamp
+  - id: heidelberg_Low_Solar_Input_Timestamp
     type: unsigned long
     restore_value: no
     initial_value: '0'
