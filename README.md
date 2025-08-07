@@ -4,6 +4,8 @@ The wallbox "Heidelberg Energy Control" is a robust BEV charger with an excellen
 
 For charge-on-solar, the easiest solution is to connect the box with a house-automation system like Home Assistant.
 
+<img src="https://github.com/top-gun/Heidelberg-Energy-Control-ESPhome/blob/main/pictures/Heidelberg-open.JPEG" width="300" height="400">
+
 ![alt text](https://github.com/top-gun/Heidelberg-Energy-Control-ESPhome/blob/main/pictures/Heidelberg-open.JPEG "Wallbox")
 
 This is the wallbox from within Home Assistant:
