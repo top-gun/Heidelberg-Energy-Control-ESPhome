@@ -6,6 +6,11 @@ For charge-on-solar, the easiest solution is to connect the box with a house-aut
 
 ![alt text](https://github.com/top-gun/Heidelberg-Energy-Control-ESPhome/blob/main/pictures/Heidelberg-open.JPEG "Wallbox")
 
+This is the wallbox from within Home Assistant:
+
+![alt text](https://github.com/top-gun/Heidelberg-Energy-Control-ESPhome/blob/main/pictures/HomeAssistant.png "Wallbox in HA")
+
+
 # Hardware requirements:
 
 An ESP32 - they are in the range of 5-10 Euro. I picked one with 230V-input, about 8 Euro on Ali Express: https://de.aliexpress.com/item/1005003721730927.html
