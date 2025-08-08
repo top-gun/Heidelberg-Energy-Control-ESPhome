@@ -10,6 +10,10 @@ This is the wallbox from within Home Assistant:
 
 ![alt text](https://github.com/top-gun/Heidelberg-Energy-Control-ESPhome/blob/main/pictures/HomeAssistant.png "Wallbox in HA")
 
+And a screenshot of my Dashboard for daily use:
+
+![alt text](https://github.com/top-gun/Heidelberg-Energy-Control-ESPhome/blob/main/pictures/HA-Dashboard.png "Dashboard in HA")
+
 
 # Hardware requirements:
 
