@@ -1,4 +1,6 @@
-# Stand: 06.08.25
+# Stand: 16.08.25
+# for ESP32 230V
+#
 
 substitutions:
   friendly_name: "Wallbox"
@@ -9,7 +11,6 @@ esp32:
   board: esp32dev  # set as needed for your board
   framework:
     type: esp-idf
-    # version: 5.3.2
 
 ota:
   - platform: esphome
@@ -53,8 +54,8 @@ esphome:
         - logger.log: "Set the failsafe current to 6A on startup"
         - number.set:
             id: heidelberg_powersave
-            value: 1  # Turn off powermanagement.
-        - logger.log: "Turned off powersaving on the wallbox if idle to keep communication without cable"
+            value: 0  # Turn on powermanagement.
+        - logger.log: "Turned on powersaving on the wallbox. Disabling powersaving causes the meter to lose data on a restart"
 
 
 switch:
@@ -227,6 +228,7 @@ sensor:
     register_type: read
     value_type: U_DWORD  # 32-bit unsigned integer
     unit_of_measurement: "kWh"
+    state_class: total
     accuracy_decimals: 3
     filters:
       - multiply: 0.001  # von Wh → kWh
@@ -238,6 +240,7 @@ sensor:
     register_type: read
     value_type: U_DWORD  # 32-bit unsigned integer
     unit_of_measurement: "kWh"
+    state_class: total_increasing
     accuracy_decimals: 3
     filters:
       - multiply: 0.001  # von Wh → kWh
@@ -271,7 +274,7 @@ number:
     value_type: U_WORD
     min_value: 0 # Minimum current (6A)
     max_value: 16 # Maximum current (16A)
-    step: 1
+    step: 0.5
     unit_of_measurement: A
     lambda: |-
       return x / 10;
