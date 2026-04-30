@@ -1,0 +1,594 @@
+preferences:
+  flash_write_interval: 10min
+
+logger:
+  on_message:  # Trigger bei jeder neuen Log-Nachricht
+      then:
+        - if:
+            condition:
+              lambda: |-
+                // Prüft ausschließlich auf den kritischen Fehlertext
+                return strstr(message, "Modbus CRC Check failed!") != nullptr;
+            then:
+              # Zähler inkrementieren
+              - globals.set:
+                  id: heidelberg_modbus_error_global
+                  value: !lambda 'return id(heidelberg_modbus_error_global) + 1;'
+
+esphome:
+  on_boot:
+      priority: -100  # Niedrige Priorität, um nach der Modbus-Initialisierung ausgeführt zu werden
+      then:
+        - number.set:
+            id: heidelberg_charge_current
+            value: 6  # Setzt den Ladestrom auf 6 A
+        - logger.log: "Set the charge current to 6A on startup"
+        - number.set:
+            id: heidelberg_failsafe_charge_current
+            value: 16  # Setzt den Ladestrom für Kommunikationsfehler auf 16 A
+        - logger.log: "Set the failsafe current to 16A on startup"
+        - number.set:
+            id: heidelberg_powersave
+            value: 4  # Turn off powermanagement.
+        - logger.log: "Turned on powersaving on the wallbox. Disabling powersaving causes the meter to lose data on a restart"
+        - switch.turn_on: heidelberg_master_hard
+        - logger.log: "Turned on Master Switch, Wallbox is enabled mechanically"
+        - switch.turn_on: heidelberg_master_soft
+        - logger.log: "Turned on Soft Switch, Wallbox is enabled logically"
+        - logger.log: "wallbox assumed online!"
+        - binary_sensor.template.publish:
+            id: heidelberg_modbus_state
+            state: On
+        - globals.set:
+            id: heidelberg_modbus_error_global
+            value: !lambda 'return 0;'
+
+# UART configuration for RS485
+uart:
+  id: mod_uart
+  tx_pin: GPIO16 # 01 TX pin for RS485 module
+  rx_pin: GPIO17 # 03 RX pin for RS485 module
+  baud_rate: 19200 # Heidelberg Wallbox default baud rate
+  parity: EVEN # Communication parameters: 8E1 (8 data bits, Even parity, 1 stop bit)
+  stop_bits: 1
+
+
+# Modbus configuration
+modbus:
+  id: mod_bus
+  uart_id: mod_uart
+  send_wait_time: 200ms # Wait time between Modbus requests
+
+
+# Modbus Controller for Heidelberg Wallbox
+modbus_controller:
+  id: heidelberg_wallbox_id01
+  address: 1 # Modbus Bus ID (matches S4 DIP switch, e.g., 0001)
+  modbus_id: mod_bus
+  command_throttle: 100ms # Minimum time between requests
+  update_interval: 5s # How often to poll the Wallbox
+  on_online:
+    then:
+    - logger.log: "wallbox back online!"
+    - binary_sensor.template.publish:
+        id: heidelberg_modbus_state
+        state: On
+  on_offline:
+    then:
+    - logger.log: "wallbox is offline!"
+    - binary_sensor.template.publish:
+        id: heidelberg_modbus_state
+        state: Off
+
+
+switch:
+  - platform: gpio
+    name: "WB Master"
+    id: heidelberg_master_hard
+    pin: GPIO18
+    inverted: yes
+    on_turn_off: 
+        - number.set: 
+            id: heidelberg_charge_current
+            value: 0
+#    entity_category: config
+  - platform: template
+    name: "WB Master-soft"
+    id: heidelberg_master_soft
+    entity_category: config
+    lambda: |-
+      return (id(heidelberg_softlock).state == 1);
+    turn_on_action:
+        - number.set:
+            id: heidelberg_softlock
+            value: 1  # 1 = enable charging.    
+    turn_off_action:
+        - number.set:
+            id: heidelberg_softlock
+            value: 0  # 0 = Wallbock locked.
+  - platform: template
+    name: "WB Powersave aktiv"
+    lambda: |-
+      return (id(heidelberg_powersave).state == 0);
+    turn_on_action:
+        - number.set:
+            id: heidelberg_powersave
+            value: 0  # Turn on powermanagement.    
+    turn_off_action:
+        - number.set:
+            id: heidelberg_powersave
+            value: 4  # 4=always on.
+    entity_category: config
+  - platform: template
+    id: "heidelberg_Low_Solar_Input"
+    name: "WB Low Solar Input"
+    internal: True
+    optimistic: True 
+    on_turn_on:
+      - lambda: |-
+          id(heidelberg_Low_Solar_Input_Timestamp) = millis();
+    on_turn_off:
+      - lambda: |-
+          id(heidelberg_Low_Solar_Input_Timestamp) = millis();
+  - platform: template
+    name: "WB Modbus Polling active"
+    id: heidelberg_modbus_polling_switch
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    on_turn_on:
+      - component.resume: heidelberg_wallbox_id01
+    on_turn_off:
+      - component.suspend: heidelberg_wallbox_id01
+
+# Sensors (read Wallbox data)
+sensor:
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_softwareversion
+    internal: false
+    accuracy_decimals: 0
+    address: 0x0004 
+    register_type: read
+    value_type: U_WORD
+    lambda: |-
+      return uint32_t(x -156);
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_ladestatus_num
+    internal: False
+    address: 0x0005 # Register for charging state
+    register_type: read
+    value_type: U_WORD
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_current_l1
+    name: "WB Strom L1"
+    address: 0x0006 # Register for L1 current (RMS, in 0.1A)
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: A
+    device_class: current
+    accuracy_decimals: 1
+    filters:
+    - multiply: 0.1 # Convert to Amperes
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_current_l2
+    name: "WB Strom L2"
+    address: 0x0007 # Register for L2 current (RMS, in 0.1A)
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: A
+    device_class: current
+    accuracy_decimals: 1
+    filters:
+    - multiply: 0.1 # Convert to Amperes
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_current_l3
+    name: "WB Strom L3"
+    address: 0x0008 # Register for L3 current (RMS, in 0.1A)
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: A
+    device_class: current
+    accuracy_decimals: 1
+    filters:
+    - multiply: 0.1 # Convert to Amperes
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_temperature
+    name: "WB Temperatur"
+    address: 0x0009 # Register for L1 current (RMS, in 0.1A)
+    register_type: read
+    value_type: S_WORD
+    unit_of_measurement: C
+    device_class: temperature
+    accuracy_decimals: 0
+    filters:
+    - multiply: 0.1 # Convert to Amperes
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_voltage_l1
+    name: "WB Spannung L1"
+    address: 0x000A # Register for L1 voltage (RMS, in V)
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: V
+    device_class: voltage
+    accuracy_decimals: 0
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_voltage_l2
+    name: "WB Spannung L2"
+    address: 0x000B # Register for L1 voltage (RMS, in V)
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: V
+    device_class: voltage
+    accuracy_decimals: 0
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_voltage_l3
+    name: "WB Spannung L3"
+    address: 0x000C # Register for L1 voltage (RMS, in V)
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: V
+    device_class: voltage
+    accuracy_decimals: 0
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_power
+    name: "WB Leistung"
+    address: 0x000e # Register for total power (in VA)
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: W
+    device_class: power
+    accuracy_decimals: 0
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_energy_powerup
+    name: "WB Energie seit Start"
+    address: 0x000f  # entspricht Register 30018 (0-basiert!)
+    register_type: read
+    value_type: U_DWORD  # 32-bit unsigned integer
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001  # von Wh → kWh
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_energy_total
+    name: "WB Energie Gesamt"
+    address: 0x0011  # entspricht Register 30018 (0-basiert!)
+    register_type: read
+    value_type: U_DWORD  # 32-bit unsigned integer
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001  # von Wh → kWh
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_hw_maxcurrent
+    name: "WB Hardware Max Current"
+    address: 100 
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: A
+    accuracy_decimals: 0
+    entity_category: diagnostic
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_hw_mincurrent
+    name: "WB Hardware Min Current"
+    address: 101 
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: A
+    accuracy_decimals: 0
+    entity_category: diagnostic
+  - platform: template
+    id: heidelberg_sw_version
+    name: "WB Softwareversion"
+    lambda: |-
+      return uint32_t(id(heidelberg_softwareversion).state);
+    entity_category: diagnostic
+  - platform: uptime
+    type: seconds
+    name: Uptime Sensor
+    entity_category: diagnostic
+  - platform: template
+    id: heidelberg_Low_Solar_Input_Duration
+    name: "WB Low Solar Input Duration"
+    accuracy_decimals: 0
+    unit_of_measurement: "s"
+    update_interval: 10s 
+    internal: True
+    entity_category: diagnostic
+    lambda: |-
+      unsigned long current = millis();
+      auto zeit = (current - id(heidelberg_Low_Solar_Input_Timestamp))/1000;
+      if (not(id(heidelberg_Low_Solar_Input).state)) { zeit = 0; };
+      return zeit;
+  - platform: template
+    name: "WB Modbus Fehler"
+    id: heidelberg_modbus_error
+    entity_category: diagnostic
+    unit_of_measurement: "Fehler"
+    accuracy_decimals: 0
+    update_interval: 5s
+    lambda: |-
+      return id(heidelberg_modbus_error_global);
+    on_value_range:
+      - above: 50
+        then:
+          - button.press: wb_restart
+  - platform: wifi_signal
+    name: "WB WiFi Signal Sensor"
+    update_interval: 60s
+
+
+number:
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_charge_current
+    name: "WB Ladestrom"
+    address: 0x0105 # Holding register for max current command
+    register_type: holding
+    value_type: U_WORD
+    min_value: 0 # Minimum current (6A)
+    max_value: 16 # Maximum current (16A)
+    step: 1
+    unit_of_measurement: A
+    lambda: |-
+      return x / 10;
+    # Convert to Amperes, map 1-5A to 6A
+    # multiply by 10, 1A = 10
+#    write_lambda: |-
+#      // Master-Switch ist AUS → immer 6 A erzwingen
+#       if (! id(heidelberg_master_hard).state) {
+#        return 60;               // → 6 A
+#      }
+#
+#      // Master ist EIN → normale Logik
+#      float ampere = x;
+#      if (ampere <= 5.0) {
+#        return 60;
+#      } else {
+#        return (uint16_t) (floor(ampere * 10.0 + 0.0001));
+#      }
+    write_lambda: |-
+      switch ( int(floor(x)) ) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+          return 60;
+        default:
+          return int(floor(x)) * 10;
+      }
+    on_value_range:
+      above: 1
+      then:
+        - switch.turn_on: heidelberg_master_hard
+        - switch.turn_on: heidelberg_master_soft
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_watchdog
+    name: "WB Watchdog Timer"
+    internal: yes
+    address: 0x0101 # Holding register for max current command
+    register_type: holding
+    value_type: U_WORD
+    min_value: 0 # value in seconds, 0=off
+    max_value: 65 # Maximum is 65s
+    step: 1
+    unit_of_measurement: s
+    lambda: |-
+      return x / 1000;
+    write_lambda: |-
+      return x * 1000;
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_powersave
+    name: "WB Powersaving disable"
+    internal: True
+    address: 0x0102 # Holding register for max current command
+    register_type: holding
+    value_type: U_WORD
+    min_value: 0 
+    max_value: 4 
+    step: 4
+    # only bit 2 is relevant, either 0 or 4, 4=disable
+    entity_category: config
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_softlock
+    name: "WB Softswitch"
+    internal: True
+    address: 0x0103 # Remotelock as of 1.08+
+    register_type: holding
+    value_type: U_WORD
+    min_value: 0 
+    max_value: 1 
+    step: 1
+    # 1=enabled, 0=disabled
+    entity_category: config
+  - platform: modbus_controller
+    modbus_controller_id: heidelberg_wallbox_id01
+    id: heidelberg_failsafe_charge_current
+    name: "WB Failsafe Charge Current"
+    address: 0x0106 # Holding register for max current command
+    register_type: holding
+    value_type: U_WORD
+    min_value: 0 # Minimum current (6A), 0=off
+    max_value: 16 # Maximum current (16A) remember we have 3 phases, 16A=11kW
+    step: 1
+    unit_of_measurement: A
+    # read: divide by 10 because 10 -> 1A
+    lambda: |-
+      return x / 10;
+    # write: Convert to Amperes, 1-5A is disallowed
+    # multiply by 10, because 1A -> 10
+    write_lambda: |-
+      if (x >= 1 && x <= 5) {
+      return 60;
+      } else {
+      return x * 10;
+      }
+    entity_category: config
+  - platform: template
+    id: heidelberg_power_subtract
+    name: "Heidelberg_Hausverbrauch"
+    optimistic: True
+    internal: True
+    restore_value: True
+    min_value: 0
+    max_value: 10000
+    step: 100
+    entity_category: config
+  - platform: template
+    id: heidelberg_power_avail
+    name: "Heidelberg Leistung_PV"
+    optimistic: True
+    internal: True
+    min_value: 0
+    max_value: 11000
+    step: 1
+    on_value: 
+      then:
+        - if:
+            condition:
+              lambda: 'return x < 4140;'
+            then:
+              - switch.turn_on: heidelberg_Low_Solar_Input
+            else:
+              - switch.turn_off: heidelberg_Low_Solar_Input
+        - lambda: |-
+            // calculate amperage from Solar power and house consumption
+            float ampere = (x - id(heidelberg_power_subtract).state) / 230 /3;
+            ampere = floor(ampere);
+              unsigned long current = millis();
+            // if current is under 6A, keep charging for 5 minutes, then turn charging off
+            if (ampere <6 and id(heidelberg_Low_Solar_Input).state &&
+                (id(heidelberg_Low_Solar_Input_Duration).state > 300)) {
+              ampere = 0;
+            }
+            // transfer ampere to Modbus Register 
+            auto call = id(heidelberg_charge_current).make_call();
+            call.set_value( ampere );
+            call.perform();
+            // (id(heidelberg_charge_current).publish_state(ampere));
+
+
+text_sensor:
+  - platform: template
+    id: heidelberg_Ladestatus
+    update_interval: 10s
+    name: "WB Ladestatus"
+    lambda: |-
+      auto value = id(heidelberg_ladestatus_num).state;
+      switch ((uint16_t)value) {
+      case 2: return std::string("Frei");
+      case 3: return std::string("Frei");
+      case 4: return std::string("Gesperrt");
+      case 5: return std::string("Bereit");
+      case 6: return std::string("nein-6");
+      case 7: return std::string("Laedt");
+      case 8: return std::string("Reduziert");
+      case 9: return std::string("Fehler-Isolation");
+      case 10: return std::string("Gesperrt-Soft");
+      default: return std::string("Fehler");
+      }
+  - platform: template
+    id: heidelberg_Ladestatus_ISO
+    update_interval: 10s
+    name: "WB Ladestatus-ISO"
+    lambda: |-
+      auto value = id(heidelberg_ladestatus_num).state;
+      switch ((uint16_t)value) {
+      case 2: return std::string("A1");
+      case 3: return std::string("A2");
+      case 4: return std::string("B1");
+      case 5: return std::string("B2");
+      case 6: return std::string("C1");
+      case 7: return std::string("C2");
+      case 8: return std::string("derating");
+      case 9: return std::string("F");
+      case 10: return std::string("A1");
+      case 11: return std::string("11");
+      default: return std::string("Fehler");
+      }
+    entity_category: diagnostic
+  - platform: template
+    id: heidelberg_Ladestatus_ISO2
+    update_interval: 3s
+    name: "WB Ladestatus-ISO2"
+    lambda: |-
+      auto value = id(heidelberg_ladestatus_num).state;
+      switch ((uint16_t)value) {
+      case 2: return std::string("A");
+      case 3: return std::string("A");
+      case 4: return std::string("B");
+      case 5: return std::string("B");
+      case 6: return std::string("C");
+      case 7: return std::string("C");
+      case 8: return std::string("derating");
+      case 9: return std::string("F");
+      case 10: return std::string("A");
+      case 11: return std::string("11");
+      default: return std::string("Fehler");
+      }
+#    entity_category: diagnostic
+
+binary_sensor:
+  - platform: template
+    id: heidelberg_Ladekabel
+    name: "WB Ladekabel"
+    lambda: |-
+      auto value = id(heidelberg_ladestatus_num).state;
+      switch ((uint16_t)value) {
+      case 2: return false;
+      case 3: return false;
+      case 4: return true;
+      case 5: return true;
+      case 6: return true;
+      case 7: return true;
+      case 8: return true;
+      case 9: return {};
+      case 10: return {};
+      default: return {};
+      }
+    on_release: 
+      if:
+        condition:
+          sensor.in_range:     # Alternative: numeric_state mit above
+            id: heidelberg_energy_powerup
+            above: 0.0         # alles größer als 0
+        then:
+          - logger.log: "Soft-lock 40s to allow meters to save"
+          - switch.turn_off: heidelberg_master_soft
+          - delay: 40s
+          - switch.turn_on: heidelberg_master_soft
+  - platform: template
+    name: "WB Modbus Status"
+    id: heidelberg_modbus_state
+    entity_category: diagnostic
+
+globals:
+  - id: heidelberg_Low_Solar_Input_Timestamp
+    type: unsigned long
+    restore_value: no
+    initial_value: '0'
+  - id: heidelberg_modbus_error_global
+    type: int
+    restore_value: no  # Neustart: Zähler auf 0 zurücksetzen (oder 'yes' für persistent)
+    initial_value: '0'
+    
