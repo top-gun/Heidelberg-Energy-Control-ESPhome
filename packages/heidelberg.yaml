@@ -325,10 +325,6 @@ sensor:
     update_interval: 5s
     lambda: |-
       return id(heidelberg_modbus_error_global);
-    on_value_range:
-      - above: 50
-        then:
-          - button.press: wb_restart
   - platform: wifi_signal
     name: "WB WiFi Signal Sensor"
     update_interval: 60s
