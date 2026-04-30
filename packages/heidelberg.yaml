@@ -46,8 +46,8 @@ esphome:
 # UART configuration for RS485
 uart:
   id: mod_uart
-  tx_pin: GPIO39 # 01 TX pin for RS485 module
-  rx_pin: GPIO38 # 03 RX pin for RS485 module
+  tx_pin: GPIO38 # 01 TX pin for RS485 module
+  rx_pin: GPIO39 # 03 RX pin for RS485 module
   baud_rate: 19200 # Heidelberg Wallbox default baud rate
   parity: EVEN # Communication parameters: 8E1 (8 data bits, Even parity, 1 stop bit)
   stop_bits: 1
