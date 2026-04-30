@@ -84,8 +84,6 @@ modbus_controller:
 switch:
   - platform: gpio
     name: "WB Master"
-    web_server:
-      group: wallbox_group     # ← hier die Gruppe zuweisen
     id: heidelberg_master_hard
     pin: GPIO18
     inverted: yes
@@ -165,8 +163,6 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_current_l1
     name: "WB Strom L1"
-    web_server:
-      group: wallbox_group     # ← hier die Gruppe zuweisen
     address: 0x0006 # Register for L1 current (RMS, in 0.1A)
     register_type: read
     value_type: U_WORD
@@ -179,8 +175,6 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_current_l2
     name: "WB Strom L2"
-    web_server:
-      group: wallbox_group     # ← hier die Gruppe zuweisen
     address: 0x0007 # Register for L2 current (RMS, in 0.1A)
     register_type: read
     value_type: U_WORD
@@ -193,8 +187,6 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_current_l3
     name: "WB Strom L3"
-    web_server:
-      group: wallbox_group     # ← hier die Gruppe zuweisen
     address: 0x0008 # Register for L3 current (RMS, in 0.1A)
     register_type: read
     value_type: U_WORD
@@ -207,8 +199,6 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_temperature
     name: "WB Temperatur"
-    web_server:
-      group: wallbox_group     # ← hier die Gruppe zuweisen
     address: 0x0009 # Register for L1 current (RMS, in 0.1A)
     register_type: read
     value_type: S_WORD
@@ -221,8 +211,6 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_voltage_l1
     name: "WB Spannung L1"
-    web_server:
-      group: wallbox_group     # ← hier die Gruppe zuweisen
     address: 0x000A # Register for L1 voltage (RMS, in V)
     register_type: read
     value_type: U_WORD
@@ -233,8 +221,6 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_voltage_l2
     name: "WB Spannung L2"
-    web_server:
-      group: wallbox_group     # ← hier die Gruppe zuweisen
     address: 0x000B # Register for L1 voltage (RMS, in V)
     register_type: read
     value_type: U_WORD
@@ -245,8 +231,6 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_voltage_l3
     name: "WB Spannung L3"
-    web_server:
-      group: wallbox_group     # ← hier die Gruppe zuweisen
     address: 0x000C # Register for L1 voltage (RMS, in V)
     register_type: read
     value_type: U_WORD
@@ -257,8 +241,6 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_power
     name: "WB Leistung"
-    web_server:
-      group: wallbox_group     # ← hier die Gruppe zuweisen
     address: 0x000e # Register for total power (in VA)
     register_type: read
     value_type: U_WORD
@@ -269,8 +251,6 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_energy_powerup
     name: "WB Energie seit Start"
-    web_server:
-      group: wallbox_group     # ← hier die Gruppe zuweisen
     address: 0x000f  # entspricht Register 30018 (0-basiert!)
     register_type: read
     value_type: U_DWORD  # 32-bit unsigned integer
@@ -284,8 +264,6 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_energy_total
     name: "WB Energie Gesamt"
-    web_server:
-      group: wallbox_group     # ← hier die Gruppe zuweisen
     address: 0x0011  # entspricht Register 30018 (0-basiert!)
     register_type: read
     value_type: U_DWORD  # 32-bit unsigned integer
@@ -299,8 +277,6 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_hw_maxcurrent
     name: "WB Hardware Max Current"
-    web_server:
-      group: wallbox_group     # ← hier die Gruppe zuweisen
     address: 100 
     register_type: read
     value_type: U_WORD
@@ -311,8 +287,6 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_hw_mincurrent
     name: "WB Hardware Min Current"
-    web_server:
-      group: wallbox_group     # ← hier die Gruppe zuweisen
     address: 101 
     register_type: read
     value_type: U_WORD
@@ -322,10 +296,12 @@ sensor:
   - platform: template
     id: heidelberg_sw_version
     name: "WB Softwareversion"
-    web_server:
-      group: wallbox_group     # ← hier die Gruppe zuweisen
     lambda: |-
       return uint32_t(id(heidelberg_softwareversion).state);
+    entity_category: diagnostic
+  - platform: uptime
+    type: seconds
+    name: Uptime Sensor
     entity_category: diagnostic
   - platform: template
     id: heidelberg_Low_Solar_Input_Duration
@@ -359,8 +335,6 @@ number:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_charge_current
     name: "WB Ladestrom"
-    web_server:
-      group: wallbox_group     # ← hier die Gruppe zuweisen
     address: 0x0105 # Holding register for max current command
     register_type: holding
     value_type: U_WORD
@@ -405,8 +379,6 @@ number:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_watchdog
     name: "WB Watchdog Timer"
-    web_server:
-      group: wallbox_group     # ← hier die Gruppe zuweisen
     internal: yes
     address: 0x0101 # Holding register for max current command
     register_type: holding
@@ -423,8 +395,6 @@ number:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_powersave
     name: "WB Powersaving disable"
-    web_server:
-      group: wallbox_group     # ← hier die Gruppe zuweisen
     internal: True
     address: 0x0102 # Holding register for max current command
     register_type: holding
