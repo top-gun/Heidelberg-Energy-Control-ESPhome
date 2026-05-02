@@ -5,8 +5,9 @@ logger:
   baud_rate: 0
   level: debug
   logs:
-    sensor: warn
-    number: warn
+    sensor: error
+    number: error
+    text_sensor: error  
     modbus_controller.sensor: warn
   on_message:  # Trigger bei jeder neuen Log-Nachricht
       then:
