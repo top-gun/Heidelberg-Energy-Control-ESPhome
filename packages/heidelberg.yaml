@@ -7,7 +7,7 @@ logger:
   logs:
     sensor: warn
     number: warn
-    
+    modbus_controller.sensor: warn
   on_message:  # Trigger bei jeder neuen Log-Nachricht
       then:
         - if:
