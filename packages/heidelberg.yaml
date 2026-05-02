@@ -2,6 +2,8 @@ preferences:
   flash_write_interval: 10min
 
 logger:
+  baud_rate: 0
+  level: debug
   on_message:  # Trigger bei jeder neuen Log-Nachricht
       then:
         - if:
