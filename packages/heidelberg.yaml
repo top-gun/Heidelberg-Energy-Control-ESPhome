@@ -9,6 +9,7 @@ logger:
     number: error
     text_sensor: error  
     modbus_controller.sensor: warn
+    modbus: debug
   on_message:  # Trigger bei jeder neuen Log-Nachricht
       then:
         - if:
