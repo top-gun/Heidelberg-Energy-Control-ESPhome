@@ -17,6 +17,12 @@ logger:
                   id: heidelberg_modbus_error_global
                   value: !lambda 'return id(heidelberg_modbus_error_global) + 1;'
 
+esp32:
+  framework:
+    sdkconfig_options:
+      CONFIG_JTAG_ENABLED: "n"
+      CONFIG_ESP_SYSTEM_PANIC: "REBOOT"  
+
 esphome:
   on_boot:
       priority: -100  # Niedrige Priorität, um nach der Modbus-Initialisierung ausgeführt zu werden
