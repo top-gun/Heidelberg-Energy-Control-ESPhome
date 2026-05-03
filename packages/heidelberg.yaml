@@ -166,6 +166,7 @@ sensor:
     value_type: U_WORD
     lambda: |-
       return uint32_t(x -156);
+    sorting_group_id: "Heidelberg Wallbox (Modbus)"
   - platform: modbus_controller
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_ladestatus_num
