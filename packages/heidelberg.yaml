@@ -189,7 +189,8 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_current_l2
     name: "WB Strom L2"
-    sorting_group_id: wallbox_group
+    web_server:
+      sorting_group_id: wallbox_group
     address: 0x0007 # Register for L2 current (RMS, in 0.1A)
     register_type: read
     value_type: U_WORD
@@ -202,7 +203,8 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_current_l3
     name: "WB Strom L3"
-    sorting_group_id: wallbox_group
+    web_server:
+      sorting_group_id: wallbox_group
     address: 0x0008 # Register for L3 current (RMS, in 0.1A)
     register_type: read
     value_type: U_WORD
@@ -215,7 +217,8 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_temperature
     name: "WB Temperatur"
-    sorting_group_id: wallbox_group
+    web_server:
+      sorting_group_id: wallbox_group
     address: 0x0009 # Register for L1 current (RMS, in 0.1A)
     register_type: read
     value_type: S_WORD
