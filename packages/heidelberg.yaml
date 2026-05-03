@@ -109,6 +109,8 @@ switch:
   - platform: template
     name: "WB Master-soft"
     id: heidelberg_master_soft
+    web_server:
+      sorting_group_id: wallbox_group
     entity_category: config
     lambda: |-
       return (id(heidelberg_softlock).state == 1);
