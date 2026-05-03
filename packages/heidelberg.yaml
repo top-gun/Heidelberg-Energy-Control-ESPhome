@@ -177,6 +177,8 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_current_l1
     name: "WB Strom L1"
+    web_server:
+      sorting_group_id: wallbox_group
     address: 0x0006 # Register for L1 current (RMS, in 0.1A)
     register_type: read
     value_type: U_WORD
