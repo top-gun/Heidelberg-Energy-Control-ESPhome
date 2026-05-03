@@ -231,7 +231,8 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_voltage_l1
     name: "WB Spannung L1"
-    sorting_group_id: wallbox_group
+    web_server:
+      sorting_group_id: wallbox_group
     address: 0x000A # Register for L1 voltage (RMS, in V)
     register_type: read
     value_type: U_WORD
@@ -242,7 +243,8 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_voltage_l2
     name: "WB Spannung L2"
-    sorting_group_id: wallbox_group
+    web_server:
+      sorting_group_id: wallbox_group
     address: 0x000B # Register for L1 voltage (RMS, in V)
     register_type: read
     value_type: U_WORD
@@ -253,7 +255,8 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_voltage_l3
     name: "WB Spannung L3"
-    sorting_group_id: wallbox_group
+    web_server:
+      sorting_group_id: wallbox_group
     address: 0x000C # Register for L1 voltage (RMS, in V)
     register_type: read
     value_type: U_WORD
@@ -264,7 +267,8 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_power
     name: "WB Leistung"
-    sorting_group_id: wallbox_group
+    web_server:
+      sorting_group_id: wallbox_group
     address: 0x000e # Register for total power (in VA)
     register_type: read
     value_type: U_WORD
@@ -275,7 +279,8 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_energy_powerup
     name: "WB Energie seit Start"
-    sorting_group_id: wallbox_group
+    web_server:
+      sorting_group_id: wallbox_group
     address: 0x000f  # entspricht Register 30018 (0-basiert!)
     register_type: read
     value_type: U_DWORD  # 32-bit unsigned integer
@@ -289,7 +294,8 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_energy_total
     name: "WB Energie Gesamt"
-    sorting_group_id: wallbox_group
+    web_server:
+      sorting_group_id: wallbox_group
     address: 0x0011  # entspricht Register 30018 (0-basiert!)
     register_type: read
     value_type: U_DWORD  # 32-bit unsigned integer
@@ -303,7 +309,8 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_hw_maxcurrent
     name: "WB Hardware Max Current"
-    sorting_group_id: wallbox_group
+    web_server:
+      sorting_group_id: wallbox_group
     address: 100 
     register_type: read
     value_type: U_WORD
@@ -314,7 +321,8 @@ sensor:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_hw_mincurrent
     name: "WB Hardware Min Current"
-    sorting_group_id: wallbox_group
+    web_server:
+      sorting_group_id: wallbox_group
     address: 101 
     register_type: read
     value_type: U_WORD
@@ -324,7 +332,8 @@ sensor:
   - platform: template
     id: heidelberg_sw_version
     name: "WB Softwareversion"
-    sorting_group_id: wallbox_group
+    web_server:
+      sorting_group_id: wallbox_group
     lambda: |-
       return uint32_t(id(heidelberg_softwareversion).state);
     entity_category: diagnostic
@@ -335,7 +344,8 @@ sensor:
   - platform: template
     id: heidelberg_Low_Solar_Input_Duration
     name: "WB Low Solar Input Duration"
-    sorting_group_id: wallbox_group
+    web_server:
+      sorting_group_id: wallbox_group
     accuracy_decimals: 0
     unit_of_measurement: "s"
     update_interval: 10s 
@@ -348,7 +358,8 @@ sensor:
       return zeit;
   - platform: template
     name: "WB Modbus Fehler"
-    sorting_group_id: wallbox_group
+    web_server:
+      sorting_group_id: wallbox_group
     id: heidelberg_modbus_error
     entity_category: diagnostic
     unit_of_measurement: "Fehler"
