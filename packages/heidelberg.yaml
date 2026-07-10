@@ -35,7 +35,7 @@ esphome:
       then:
         - number.set:
             id: heidelberg_charge_current
-            value: 6  # Setzt den Ladestrom auf 6 A
+            value: 16  # Setzt den Ladestrom auf 6 A
         - logger.log: "Set the charge current to 6A on startup"
         - number.set:
             id: heidelberg_failsafe_charge_current
