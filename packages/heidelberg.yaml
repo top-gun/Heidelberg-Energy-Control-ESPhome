@@ -167,8 +167,6 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_softwareversion
-    web_server:
-      sorting_group_id: wallbox_group
     internal: false
     accuracy_decimals: 0
     address: 0x0004 
