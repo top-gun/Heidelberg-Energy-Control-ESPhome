@@ -99,6 +99,8 @@ switch:
   - platform: gpio
     name: "WB Master"
     id: heidelberg_master_hard
+    web_server:
+      sorting_group_id: wallbox_group
     pin: GPIO18
     inverted: yes
     on_turn_off: 
@@ -138,6 +140,8 @@ switch:
   - platform: template
     id: "heidelberg_Low_Solar_Input"
     name: "WB Low Solar Input"
+    web_server:
+      sorting_group_id: wallbox_group
     internal: True
     optimistic: True 
     on_turn_on:
@@ -149,6 +153,8 @@ switch:
   - platform: template
     name: "WB Modbus Polling active"
     id: heidelberg_modbus_polling_switch
+    web_server:
+      sorting_group_id: wallbox_group
     optimistic: true
     restore_mode: RESTORE_DEFAULT_ON
     on_turn_on:
@@ -161,6 +167,8 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_softwareversion
+    web_server:
+      sorting_group_id: wallbox_group
     internal: false
     accuracy_decimals: 0
     address: 0x0004 
@@ -171,6 +179,8 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_ladestatus_num
+    web_server:
+      sorting_group_id: wallbox_group
     internal: False
     address: 0x0005 # Register for charging state
     register_type: read
