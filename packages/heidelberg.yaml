@@ -464,6 +464,8 @@ number:
     modbus_controller_id: heidelberg_wallbox_id01
     id: heidelberg_softlock
     name: "WB Softswitch"
+    web_server:
+      sorting_group_id: wallbox_group
     internal: True
     address: 0x0103 # Remotelock as of 1.08+
     register_type: holding
@@ -583,6 +585,8 @@ text_sensor:
     id: heidelberg_Ladestatus_ISO2
     update_interval: 3s
     name: "WB Ladestatus-ISO2"
+    web_server:
+      sorting_group_id: wallbox_group   
     lambda: |-
       auto value = id(heidelberg_ladestatus_num).state;
       switch ((uint16_t)value) {
@@ -604,6 +608,8 @@ binary_sensor:
   - platform: template
     id: heidelberg_Ladekabel
     name: "WB Ladekabel"
+    web_server:
+      sorting_group_id: wallbox_group
     lambda: |-
       auto value = id(heidelberg_ladestatus_num).state;
       switch ((uint16_t)value) {
@@ -632,6 +638,8 @@ binary_sensor:
   - platform: template
     name: "WB Modbus Status"
     id: heidelberg_modbus_state
+    web_server:
+      sorting_group_id: wallbox_group
     entity_category: diagnostic
 
 globals:
