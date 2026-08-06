@@ -153,8 +153,6 @@ switch:
   - platform: template
     name: "WB Modbus Polling active"
     id: heidelberg_modbus_polling_switch
-    web_server:
-      sorting_group_id: wallbox_group
     optimistic: true
     restore_mode: RESTORE_DEFAULT_ON
     on_turn_on:
