@@ -72,6 +72,7 @@ modbus:
   id: mod_bus
   uart_id: mod_uart
   send_wait_time: 200ms # Wait time between Modbus requests
+  turnaround_time: 200ms
 
 
 # Modbus Controller for Heidelberg Wallbox
