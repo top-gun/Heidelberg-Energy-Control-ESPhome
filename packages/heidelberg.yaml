@@ -79,7 +79,6 @@ modbus_controller:
   id: heidelberg_wallbox_id01
   address: 1 # Modbus Bus ID (matches S4 DIP switch, e.g., 0001)
   modbus_id: mod_bus
-  command_throttle: 100ms # Minimum time between requests
   update_interval: 5s # How often to poll the Wallbox
   on_online:
     then:
