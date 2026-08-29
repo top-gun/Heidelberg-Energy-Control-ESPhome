@@ -610,6 +610,7 @@ binary_sensor:
     name: "WB Ladekabel"
     web_server:
       sorting_group_id: wallbox_group
+    device_class: occupancy
     lambda: |-
       auto value = id(heidelberg_ladestatus_num).state;
       switch ((uint16_t)value) {
