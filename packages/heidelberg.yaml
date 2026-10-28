@@ -37,7 +37,7 @@ esphome:
         - logger.log: "Set the failsafe current to 16A on startup"
         - number.set:
             id: heidelberg_powersave
-            value: 4  # Turn off powermanagement.
+            value: 0  # Turn on powermanagement.
         - logger.log: "Turned on powersaving on the wallbox. Disabling powersaving causes the meter to lose data on a restart"
         - switch.turn_on: heidelberg_master_hard
         - logger.log: "Turned on Master Switch, Wallbox is enabled mechanically"
